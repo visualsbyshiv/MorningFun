@@ -14,7 +14,7 @@ const withAndroidAdsResolution = (config) => {
 allprojects {
     configurations.all {
         resolutionStrategy {
-            force 'com.google.android.gms:play-services-ads:23.6.0'
+            force 'com.google.android.gms:play-services-ads:23.0.0'
         }
     }
 }
