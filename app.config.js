@@ -1,4 +1,4 @@
-const { withProjectBuildGradle } = require('@expo/config-plugins');
+const { withProjectBuildGradle, withSettingsGradle } = require('@expo/config-plugins');
 
 try {
   require('dotenv').config();
@@ -6,24 +6,25 @@ try {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
 
-// Config plugin to force play-services-ads to version 23.5.0 (Kotlin 2.0 compatible)
-const withAndroidAdsResolution = (config) => {
-  return withProjectBuildGradle(config, (gradleConfig) => {
-    let contents = gradleConfig.modResults.contents;
-    const strategy = `
-allprojects {
-    configurations.all {
-        resolutionStrategy {
-            force 'com.google.android.gms:play-services-ads:23.5.0'
-        }
-    }
+// Config plugin to inject settings buildscript classpath to break classloader version lock
+const withAndroidSettingsKotlinVersion = (config) => {
+  return withSettingsGradle(config, (settingsConfig) => {
+    let contents = settingsConfig.modResults.contents;
+    const settingsBuildscript = `buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
+  }
 }
 `;
-    if (!contents.includes("play-services-ads:")) {
-      contents = contents + "\n" + strategy;
+    if (!contents.includes("kotlin-gradle-plugin:")) {
+      contents = settingsBuildscript + contents;
     }
-    gradleConfig.modResults.contents = contents;
-    return gradleConfig;
+    settingsConfig.modResults.contents = contents;
+    return settingsConfig;
   });
 };
 
@@ -59,5 +60,5 @@ module.exports = ({ config }) => {
     }
   };
 
-  return withAndroidAdsResolution(updatedConfig);
+  return withAndroidSettingsKotlinVersion(updatedConfig);
 };
