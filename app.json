@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "MorningTask",
+    "slug": "morning-task",
+    "jsEngine": "hermes",
+    "android": {
+      "package": "com.shiv49.morningtask"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.1.20"
+          }
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713"
+        }
+      ]
+    ],
+    "extra": {
+      "supabaseUrl": "https://vqomgqhasbbturtjemsk.supabase.co",
+      "supabaseAnonKey": "sb_publishable_ig-1oUccGzD2MyelwoHaEQ__BUDIBI3",
+      "geminiApiKey": "",
+      "buildType": "apk",
+      "eas": {
+        "projectId": "93de1d41-cd3c-4bda-9f6e-4b857307083a"
+      }
+    }
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-3940256099942544~3347511713",
+    "ios_app_id": "ca-app-pub-3940256099942544~1458002511"
+  }
+}
