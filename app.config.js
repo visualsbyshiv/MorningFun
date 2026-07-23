@@ -1,4 +1,4 @@
-const { withProjectBuildGradle, withSettingsGradle, withGradleProperties } = require('@expo/config-plugins');
+const { withProjectBuildGradle } = require('@expo/config-plugins');
 
 try {
   require('dotenv').config();
@@ -6,85 +6,21 @@ try {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
 
-// Config plugin to inject kotlinVersion=2.1.20 in gradle.properties
-const withAndroidGradlePropertiesKotlinVersion = (config) => {
-  return withGradleProperties(config, (gradlePropertiesConfig) => {
-    // Overwrite or append both properties to guarantee version 2.1.20
-    gradlePropertiesConfig.modResults = gradlePropertiesConfig.modResults.filter(
-      p => p.key !== "kotlinVersion" && p.key !== "android.kotlinVersion"
-    );
-    gradlePropertiesConfig.modResults.push({
-      type: "property",
-      key: "kotlinVersion",
-      value: "2.1.20"
-    });
-    gradlePropertiesConfig.modResults.push({
-      type: "property",
-      key: "android.kotlinVersion",
-      value: "2.1.20"
-    });
-    return gradlePropertiesConfig;
-  });
-};
-
-// Config plugin to inject Version Catalog override and resolutionStrategy in settings.gradle
-const withAndroidSettingsKotlinVersion = (config) => {
-  return withSettingsGradle(config, (settingsConfig) => {
-    let contents = settingsConfig.modResults.contents;
-    const gradleHook = `
-gradle.projectsLoaded { gradle ->
-  gradle.rootProject.allprojects { project ->
-    project.buildscript.configurations.all {
-      resolutionStrategy {
-        force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
-      }
-    }
-  }
-}
-
-dependencyResolutionManagement {
-  versionCatalogs {
-    libs {
-      version('kotlin', '2.1.20')
-    }
-  }
-}
-`;
-    if (!contents.includes("versionCatalogs")) {
-      contents = contents + "\n" + gradleHook;
-    }
-    settingsConfig.modResults.contents = contents;
-    return settingsConfig;
-  });
-};
-
-// Config plugin to inject kotlinVersion in root Project ext context and buildscript classpath
-const withAndroidKotlinVersion = (config) => {
+// Config plugin to force play-services-ads to version 24.0.0 (Kotlin 2.0 compatible)
+const withAndroidAdsResolution = (config) => {
   return withProjectBuildGradle(config, (gradleConfig) => {
     let contents = gradleConfig.modResults.contents;
-    const kotlinVersionSetting = `ext.kotlinVersion = '2.1.20'\n`;
-    if (!contents.includes("ext.kotlinVersion")) {
-      contents = kotlinVersionSetting + contents;
-    }
-    // Replace the versionless Kotlin Gradle plugin declaration to force version 2.1.20
-    contents = contents.replace(
-      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')",
-      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20')"
-    );
-    // Add buildscript configurations resolutionStrategy for all projects to force legacy plugins
-    const buildscriptOverride = `
+    const strategy = `
 allprojects {
-    buildscript {
-        configurations.all {
-            resolutionStrategy {
-                force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
-            }
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.android.gms:play-services-ads:24.0.0'
         }
     }
 }
 `;
-    if (!contents.includes("force 'org.jetbrains.kotlin:kotlin-gradle-plugin:")) {
-      contents = contents + "\n" + buildscriptOverride;
+    if (!contents.includes("play-services-ads:")) {
+      contents = contents + "\n" + strategy;
     }
     gradleConfig.modResults.contents = contents;
     return gradleConfig;
@@ -123,5 +59,5 @@ module.exports = ({ config }) => {
     }
   };
 
-  return withAndroidGradlePropertiesKotlinVersion(withAndroidSettingsKotlinVersion(withAndroidKotlinVersion(updatedConfig)));
+  return withAndroidAdsResolution(updatedConfig);
 };

@@ -6,7 +6,8 @@
     "dev": "NODE_OPTIONS=\"-r ./preload.js\" expo start",
     "android": "NODE_OPTIONS=\"-r ./preload.js\" expo start --android",
     "ios": "NODE_OPTIONS=\"-r ./preload.js\" expo start --ios",
-    "web": "NODE_OPTIONS=\"-r ./preload.js\" expo start --web"
+    "web": "NODE_OPTIONS=\"-r ./preload.js\" expo start --web",
+    "postinstall": "node patch-ads.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
