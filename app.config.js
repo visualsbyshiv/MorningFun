@@ -1,8 +1,31 @@
+const { withProjectBuildGradle } = require('@expo/config-plugins');
+
 try {
   require('dotenv').config();
 } catch (e) {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
+
+// Config plugin to force play-services-ads to a version compatible with Kotlin 1.9.0 (metadata 2.1.0)
+const withAndroidAdsResolution = (config) => {
+  return withProjectBuildGradle(config, (gradleConfig) => {
+    let contents = gradleConfig.modResults.contents;
+    const strategy = `
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.android.gms:play-services-ads:23.3.0'
+        }
+    }
+}
+`;
+    if (!contents.includes("play-services-ads:")) {
+      contents = contents + "\n" + strategy;
+    }
+    gradleConfig.modResults.contents = contents;
+    return gradleConfig;
+  });
+};
 
 module.exports = ({ config }) => {
   const updatedConfig = {
@@ -36,5 +59,5 @@ module.exports = ({ config }) => {
     }
   };
 
-  return updatedConfig;
+  return withAndroidAdsResolution(updatedConfig);
 };
