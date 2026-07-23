@@ -19,7 +19,7 @@ allprojects {
     }
 }
 `;
-    if (!contents.includes("play-services-ads:23.6.0")) {
+    if (!contents.includes("play-services-ads:")) {
       contents = contents + "\n" + strategy;
     }
     gradleConfig.modResults.contents = contents;
