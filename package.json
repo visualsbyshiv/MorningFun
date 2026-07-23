@@ -6,8 +6,7 @@
     "dev": "NODE_OPTIONS=\"-r ./preload.js\" expo start",
     "android": "NODE_OPTIONS=\"-r ./preload.js\" expo start --android",
     "ios": "NODE_OPTIONS=\"-r ./preload.js\" expo start --ios",
-    "web": "NODE_OPTIONS=\"-r ./preload.js\" expo start --web",
-    "postinstall": "node patch-ads.js"
+    "web": "NODE_OPTIONS=\"-r ./preload.js\" expo start --web"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -22,7 +21,7 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
-    "react-native-google-mobile-ads": "^16.4.0",
+    "react-native-google-mobile-ads": "14.7.2",
     "react-native-reanimated": "~4.1.1",
     "react-native-svg": "15.12.1",
     "react-native-web": "^0.21.2",

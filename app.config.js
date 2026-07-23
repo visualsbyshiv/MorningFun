@@ -6,7 +6,7 @@ try {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
 
-// Config plugin to force play-services-ads to version 24.0.0 (Kotlin 2.0 compatible)
+// Config plugin to force play-services-ads to version 23.5.0 (Kotlin 2.0 compatible)
 const withAndroidAdsResolution = (config) => {
   return withProjectBuildGradle(config, (gradleConfig) => {
     let contents = gradleConfig.modResults.contents;
@@ -14,7 +14,7 @@ const withAndroidAdsResolution = (config) => {
 allprojects {
     configurations.all {
         resolutionStrategy {
-            force 'com.google.android.gms:play-services-ads:24.0.0'
+            force 'com.google.android.gms:play-services-ads:23.5.0'
         }
     }
 }
