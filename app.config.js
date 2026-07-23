@@ -32,10 +32,12 @@ const withAndroidSettingsKotlinVersion = (config) => {
   return withSettingsGradle(config, (settingsConfig) => {
     let contents = settingsConfig.modResults.contents;
     const gradleHook = `
-gradle.beforeProject { project ->
-  project.buildscript.configurations.all {
-    resolutionStrategy {
-      force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
+gradle.projectsLoaded { gradle ->
+  gradle.rootProject.allprojects { project ->
+    project.buildscript.configurations.all {
+      resolutionStrategy {
+        force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
+      }
     }
   }
 }
