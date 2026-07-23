@@ -1,4 +1,4 @@
-const { withProjectBuildGradle, withSettingsGradle } = require('@expo/config-plugins');
+const { withProjectBuildGradle } = require('@expo/config-plugins');
 
 try {
   require('dotenv').config();
@@ -6,33 +6,24 @@ try {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
 
-// Config plugin to inject settings buildscript classpath to break classloader version lock
-const withAndroidSettingsKotlinVersion = (config) => {
-  return withSettingsGradle(config, (settingsConfig) => {
-    let contents = settingsConfig.modResults.contents;
-    const settingsBuildscript = `
-buildscript {
-  repositories {
-    google()
-    mavenCentral()
-  }
-  dependencies {
-    classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
-  }
+// Config plugin to force play-services-ads to version 25.0.0 (Kotlin 2.0 compatible)
+const withAndroidAdsResolution = (config) => {
+  return withProjectBuildGradle(config, (gradleConfig) => {
+    let contents = gradleConfig.modResults.contents;
+    const strategy = `
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.android.gms:play-services-ads:25.0.0'
+        }
+    }
 }
 `;
-    // Clean up if it was prepended to start of file previously
-    if (contents.startsWith("buildscript {")) {
-      const closingBraceIndex = contents.indexOf("}\npluginManagement {");
-      if (closingBraceIndex !== -1) {
-        contents = contents.substring(closingBraceIndex + 2);
-      }
+    if (!contents.includes("play-services-ads:")) {
+      contents = contents + "\n" + strategy;
     }
-    if (!contents.includes("kotlin-gradle-plugin:")) {
-      contents = contents.replace("includeBuild(expoPluginsPath)\n}", "includeBuild(expoPluginsPath)\n}\n" + settingsBuildscript);
-    }
-    settingsConfig.modResults.contents = contents;
-    return settingsConfig;
+    gradleConfig.modResults.contents = contents;
+    return gradleConfig;
   });
 };
 
@@ -68,5 +59,5 @@ module.exports = ({ config }) => {
     }
   };
 
-  return withAndroidSettingsKotlinVersion(updatedConfig);
+  return withAndroidAdsResolution(updatedConfig);
 };
