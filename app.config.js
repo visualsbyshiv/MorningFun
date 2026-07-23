@@ -6,19 +6,22 @@ try {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
 
-// Config plugin to inject kotlinVersion in root Project ext context and buildscript classpath
-const withAndroidKotlinVersion = (config) => {
+// Config plugin to force play-services-ads to a version compatible with Kotlin 2.0.x (metadata 2.1.0)
+const withAndroidAdsResolution = (config) => {
   return withProjectBuildGradle(config, (gradleConfig) => {
     let contents = gradleConfig.modResults.contents;
-    const kotlinVersionSetting = `ext.kotlinVersion = '2.1.20'\n`;
-    if (!contents.includes("ext.kotlinVersion")) {
-      contents = kotlinVersionSetting + contents;
+    const strategy = `
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force 'com.google.android.gms:play-services-ads:23.5.0'
+        }
     }
-    // Replace the versionless Kotlin Gradle plugin declaration to force version 2.1.20
-    contents = contents.replace(
-      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')",
-      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20')"
-    );
+}
+`;
+    if (!contents.includes("play-services-ads:")) {
+      contents = contents + "\n" + strategy;
+    }
     gradleConfig.modResults.contents = contents;
     return gradleConfig;
   });
@@ -56,5 +59,5 @@ module.exports = ({ config }) => {
     }
   };
 
-  return withAndroidKotlinVersion(updatedConfig);
+  return withAndroidAdsResolution(updatedConfig);
 };
