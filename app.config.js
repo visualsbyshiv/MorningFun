@@ -40,6 +40,21 @@ const withAndroidKotlinVersion = (config) => {
       "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')",
       "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20')"
     );
+    // Add buildscript configurations resolutionStrategy for all projects to force legacy plugins
+    const buildscriptOverride = `
+allprojects {
+    buildscript {
+        configurations.all {
+            resolutionStrategy {
+                force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
+            }
+        }
+    }
+}
+`;
+    if (!contents.includes("force 'org.jetbrains.kotlin:kotlin-gradle-plugin:")) {
+      contents = contents + "\n" + buildscriptOverride;
+    }
     gradleConfig.modResults.contents = contents;
     return gradleConfig;
   });
