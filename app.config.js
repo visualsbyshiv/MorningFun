@@ -1,4 +1,4 @@
-const { withProjectBuildGradle } = require('@expo/config-plugins');
+const { withProjectBuildGradle, withSettingsGradle } = require('@expo/config-plugins');
 
 try {
   require('dotenv').config();
@@ -6,22 +6,40 @@ try {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
 
-// Config plugin to force play-services-ads to a version compatible with Kotlin 2.0.x (metadata 2.1.0)
-const withAndroidAdsResolution = (config) => {
+// Config plugin to inject resolutionStrategy in settings.gradle
+const withAndroidSettingsKotlinVersion = (config) => {
+  return withSettingsGradle(config, (settingsConfig) => {
+    let contents = settingsConfig.modResults.contents;
+    const strategy = `
+  resolutionStrategy {
+    eachPlugin {
+      if (requested.id.id.startsWith("org.jetbrains.kotlin")) {
+        useVersion("2.1.20")
+      }
+    }
+  }
+`;
+    if (!contents.includes("org.jetbrains.kotlin")) {
+      contents = contents.replace("pluginManagement {", "pluginManagement {" + strategy);
+    }
+    settingsConfig.modResults.contents = contents;
+    return settingsConfig;
+  });
+};
+
+// Config plugin to inject kotlinVersion in root Project ext context and buildscript classpath
+const withAndroidKotlinVersion = (config) => {
   return withProjectBuildGradle(config, (gradleConfig) => {
     let contents = gradleConfig.modResults.contents;
-    const strategy = `
-allprojects {
-    configurations.all {
-        resolutionStrategy {
-            force 'com.google.android.gms:play-services-ads:23.5.0'
-        }
+    const kotlinVersionSetting = `ext.kotlinVersion = '2.1.20'\n`;
+    if (!contents.includes("ext.kotlinVersion")) {
+      contents = kotlinVersionSetting + contents;
     }
-}
-`;
-    if (!contents.includes("play-services-ads:")) {
-      contents = contents + "\n" + strategy;
-    }
+    // Replace the versionless Kotlin Gradle plugin declaration to force version 2.1.20
+    contents = contents.replace(
+      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')",
+      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20')"
+    );
     gradleConfig.modResults.contents = contents;
     return gradleConfig;
   });
@@ -59,5 +77,5 @@ module.exports = ({ config }) => {
     }
   };
 
-  return withAndroidAdsResolution(updatedConfig);
+  return withAndroidSettingsKotlinVersion(withAndroidKotlinVersion(updatedConfig));
 };
