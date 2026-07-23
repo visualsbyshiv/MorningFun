@@ -10,7 +10,8 @@ try {
 const withAndroidSettingsKotlinVersion = (config) => {
   return withSettingsGradle(config, (settingsConfig) => {
     let contents = settingsConfig.modResults.contents;
-    const settingsBuildscript = `buildscript {
+    const settingsBuildscript = `
+buildscript {
   repositories {
     google()
     mavenCentral()
@@ -20,8 +21,15 @@ const withAndroidSettingsKotlinVersion = (config) => {
   }
 }
 `;
+    // Clean up if it was prepended to start of file previously
+    if (contents.startsWith("buildscript {")) {
+      const closingBraceIndex = contents.indexOf("}\npluginManagement {");
+      if (closingBraceIndex !== -1) {
+        contents = contents.substring(closingBraceIndex + 2);
+      }
+    }
     if (!contents.includes("kotlin-gradle-plugin:")) {
-      contents = settingsBuildscript + contents;
+      contents = contents.replace("includeBuild(expoPluginsPath)\n}", "includeBuild(expoPluginsPath)\n}\n" + settingsBuildscript);
     }
     settingsConfig.modResults.contents = contents;
     return settingsConfig;
