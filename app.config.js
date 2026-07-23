@@ -6,7 +6,7 @@ try {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
 
-// Config plugin to inject kotlinVersion in root Project ext context
+// Config plugin to inject kotlinVersion in root Project ext context and buildscript classpath
 const withAndroidKotlinVersion = (config) => {
   return withProjectBuildGradle(config, (gradleConfig) => {
     let contents = gradleConfig.modResults.contents;
@@ -14,6 +14,11 @@ const withAndroidKotlinVersion = (config) => {
     if (!contents.includes("ext.kotlinVersion")) {
       contents = kotlinVersionSetting + contents;
     }
+    // Replace the versionless Kotlin Gradle plugin declaration to force version 2.1.20
+    contents = contents.replace(
+      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')",
+      "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20')"
+    );
     gradleConfig.modResults.contents = contents;
     return gradleConfig;
   });
