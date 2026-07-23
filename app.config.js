@@ -31,7 +31,15 @@ const withAndroidGradlePropertiesKotlinVersion = (config) => {
 const withAndroidSettingsKotlinVersion = (config) => {
   return withSettingsGradle(config, (settingsConfig) => {
     let contents = settingsConfig.modResults.contents;
-    const catalogOverride = `
+    const gradleHook = `
+gradle.beforeProject { project ->
+  project.buildscript.configurations.all {
+    resolutionStrategy {
+      force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
+    }
+  }
+}
+
 dependencyResolutionManagement {
   versionCatalogs {
     libs {
@@ -41,7 +49,7 @@ dependencyResolutionManagement {
 }
 `;
     if (!contents.includes("versionCatalogs")) {
-      contents = contents + "\n" + catalogOverride;
+      contents = contents + "\n" + gradleHook;
     }
     settingsConfig.modResults.contents = contents;
     return settingsConfig;
