@@ -1,10 +1,22 @@
-const { withProjectBuildGradle, withSettingsGradle } = require('@expo/config-plugins');
+const { withProjectBuildGradle, withSettingsGradle, withGradleProperties } = require('@expo/config-plugins');
 
 try {
   require('dotenv').config();
 } catch (e) {
   // Fallback if dotenv package is not explicitly installed in node_modules
 }
+
+// Config plugin to inject kotlinVersion=2.1.20 in gradle.properties
+const withAndroidGradlePropertiesKotlinVersion = (config) => {
+  return withGradleProperties(config, (gradlePropertiesConfig) => {
+    gradlePropertiesConfig.modResults.push({
+      type: "property",
+      key: "kotlinVersion",
+      value: "2.1.20"
+    });
+    return gradlePropertiesConfig;
+  });
+};
 
 // Config plugin to inject resolutionStrategy in settings.gradle
 const withAndroidSettingsKotlinVersion = (config) => {
@@ -92,5 +104,5 @@ module.exports = ({ config }) => {
     }
   };
 
-  return withAndroidSettingsKotlinVersion(withAndroidKotlinVersion(updatedConfig));
+  return withAndroidGradlePropertiesKotlinVersion(withAndroidSettingsKotlinVersion(withAndroidKotlinVersion(updatedConfig)));
 };
