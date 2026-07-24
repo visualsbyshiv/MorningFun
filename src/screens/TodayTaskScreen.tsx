@@ -11,7 +11,7 @@ import Animated, {
   withRepeat,
 } from 'react-native-reanimated';
 import { useTheme } from '../context/ThemeContext';
-import { useApp, Task } from '../context/AppContext';
+import { useApp, Task, generateDailyQuests } from '../context/AppContext';
 import { Button } from '../components/Button';
 import { QuestCard } from '../components/QuestCard';
 
@@ -44,6 +44,7 @@ export const TodayTaskScreen: React.FC = () => {
     tasksExpired,
     setCustomQuestsQueue,
     level,
+    streak,
     addManualHistoryLog,
     selectActiveTaskIndex,
   } = useApp();
@@ -152,20 +153,9 @@ export const TodayTaskScreen: React.FC = () => {
       }
     });
 
-    const pool = localTasks.filter(t => t.difficulty === currentDifficulty);
-    const randomIdx1 = Math.floor(Math.random() * pool.length);
-    let randomIdx2 = Math.floor(Math.random() * pool.length);
-    while (randomIdx2 === randomIdx1 && pool.length > 1) {
-      randomIdx2 = Math.floor(Math.random() * pool.length);
-    }
-    const defaultTasks = pool.length > 1 ? [
-      { ...pool[randomIdx1], isCompleted: false, isLocked: false, expiresAt: Date.now() + 24 * 60 * 60 * 1000 },
-      { ...pool[randomIdx2], isCompleted: false, isLocked: false, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }
-    ] : [
-      { ...pool[0], isCompleted: false, isLocked: false, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }
-    ];
-    setCustomQuestsQueue(defaultTasks);
-    Alert.alert("Tasks Reset", `Your 24-hour timer has been restarted with 2 basic ${currentDifficulty} tasks! ⚡`);
+    const newQuests = generateDailyQuests(streak, level, dailyQuestsQueue);
+    setCustomQuestsQueue(newQuests);
+    Alert.alert("Tasks Reset", "Your 24-hour timer has been restarted with new progressive tasks! ⚡");
   };
 
   // Sample proofs mapped by Quest ID
@@ -647,6 +637,7 @@ Response JSON Schema:
             const isTaskLocked = false;
             const isTaskCompleted = task.isCompleted ?? false;
             const isTaskExpired = task.isExpired ?? false;
+            const isTaskActive = task.id === currentQuest?.id;
 
             // Calculate individual countdown timer
             const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 24 * 60 * 60 * 1000);
@@ -658,8 +649,9 @@ Response JSON Schema:
                 style={[
                   styles.checklistItem,
                   {
-                    backgroundColor: theme.cardBackground,
-                    borderColor: isTaskCompleted ? '#00E676' : isTaskExpired ? '#FF4B4B' : theme.cardBorder,
+                    backgroundColor: isTaskActive ? 'rgba(255, 109, 0, 0.08)' : theme.cardBackground,
+                    borderColor: isTaskCompleted ? '#00E676' : isTaskExpired ? '#FF4B4B' : isTaskActive ? '#FF6D00' : theme.cardBorder,
+                    borderWidth: isTaskActive ? 2 : 1,
                     opacity: isTaskExpired ? 0.6 : 1,
                   }
                 ]}
@@ -685,7 +677,7 @@ Response JSON Schema:
                   ) : isTaskExpired ? (
                     <AlertTriangle size={20} color="#FF4B4B" />
                   ) : (
-                    <View style={[styles.checkboxOutline, { borderColor: theme.primary }]} />
+                    <View style={[styles.checkboxOutline, { borderColor: isTaskActive ? '#FF6D00' : theme.primary }]} />
                   )}
                   <View style={{ flex: 1 }}>
                     <Text
@@ -703,7 +695,7 @@ Response JSON Schema:
                     {/* Live countdown timer directly on each task card */}
                     {!isTaskCompleted && (
                       <Text style={{ 
-                        color: isTaskExpired ? '#FF4B4B' : theme.secondary, 
+                        color: isTaskExpired ? '#FF4B4B' : isTaskActive ? '#FF6D00' : theme.secondary, 
                         fontSize: 11, 
                         fontWeight: 'bold',
                         marginTop: 4 
@@ -728,7 +720,7 @@ Response JSON Schema:
                     <Text style={[styles.activeIndicatorBadgeText, { color: '#00E676' }]}>DONE</Text>
                   </View>
                 ) : (
-                  <View style={[styles.activeIndicatorBadge, { backgroundColor: theme.secondary }]}>
+                  <View style={[styles.activeIndicatorBadge, { backgroundColor: isTaskActive ? '#FF6D00' : theme.secondary }]}>
                     <Text style={styles.activeIndicatorBadgeText}>ACTIVE</Text>
                   </View>
                 )}
@@ -760,7 +752,7 @@ Response JSON Schema:
               <ScrollView style={{ width: '100%' }} showsVerticalScrollIndicator={false}>
                 
                 {/* Task Details Display inside Modal */}
-                <View style={{ alignItems: 'center', marginVertical: 10, padding: 12, borderWidth: 1, borderColor: theme.cardBorder, borderRadius: 16, backgroundColor: mode === 'day' ? '#F8FAFC' : 'rgba(255,255,255,0.02)' }}>
+                <View style={{ alignItems: 'center', marginVertical: 10, padding: 12, borderWidth: 1.5, borderColor: '#FF6D00', borderRadius: 16, backgroundColor: 'rgba(255, 109, 0, 0.08)' }}>
                   <Text style={{ fontSize: 42, marginBottom: 8 }}>{currentQuest.icon}</Text>
                   <Text style={{ color: theme.textPrimary, fontWeight: 'bold', fontSize: 18, textAlign: 'center', marginBottom: 6 }}>
                     {currentQuest.title}

@@ -356,6 +356,122 @@ const getFilteredTasksByLevel = (pool: Task[], userLvl: number): Task[] => {
   return filtered.length > 0 ? filtered : pool;
 };
 
+export const scaleTaskForDifficulty = (task: Task, streak: number): Task => {
+  let title = task.title;
+  let desc = task.desc;
+  let xp = task.xp;
+
+  if (streak > 0) {
+    const scaleFactor = Math.min(3.0, 1.0 + streak * 0.15); // max 3x XP multiplier
+    xp = Math.round(task.xp * scaleFactor);
+
+    if (task.id === '1') {
+      const wakeTime = streak > 3 ? '5:30 AM' : streak > 1 ? '5:45 AM' : '6:00 AM';
+      title = `Wake up at ${wakeTime}`;
+      desc = `Rise early with the morning sun. (Streak Level: ${streak})`;
+    } else if (task.id === '2') {
+      const mins = streak > 3 ? '15' : streak > 1 ? '10' : '5';
+      title = `Do a ${mins}-min mindfulness meditation`;
+      desc = `Sit quietly, close your eyes, and focus strictly on your breathing. (Streak Level: ${streak})`;
+    } else if (task.id === '3') {
+      const vol = streak > 3 ? '750ml lemon-infused water' : streak > 1 ? '500ml pure water' : '2 glasses of water';
+      title = `Drink ${vol} immediately`;
+      desc = `Rehydrate your organs and boost your morning energy. (Streak Level: ${streak})`;
+    } else if (task.id === '7') {
+      const detail = streak > 3 ? 'Make bed, organize pillows, and spray lavender mist' : streak > 1 ? 'Make bed and arrange all pillows neatly' : 'Make your bed neatly';
+      title = detail;
+    } else if (task.id === '9') {
+      const time = streak > 3 ? '10 mins of deep breathing' : streak > 1 ? '5 mins of light sun basking' : 'fresh air flow';
+      title = `Open windows and get sunlight (${time})`;
+    } else if (task.id === '10') {
+      const smileTime = streak > 3 ? '5 mins of mirror affirmations' : '3 mins of silent smiling';
+      title = `Smile to the morning sun (${smileTime})`;
+    } else if (task.id === '4') {
+      const stretchTime = streak > 3 ? '12 minutes with shoulder rolls' : '8 minutes of neck extensions';
+      title = `Giraffe neck stretches (${stretchTime})`;
+    } else if (task.id === '5') {
+      const detoxMins = streak > 3 ? '30' : '20';
+      title = `${detoxMins}-minute strict digital detox`;
+    } else if (task.id === '8') {
+      const scope = streak > 3 ? 'deep clean one cabinet or drawer' : 'tidy up two flat surfaces';
+      title = `Flat surface cleaning: ${scope}`;
+    } else if (task.id === '6') {
+      const count = streak > 3 ? '5 gratitude items and text a friend' : '5 morning gratitude points';
+      title = `Write down ${count}`;
+    } else if (task.id === '12') {
+      const warmTime = streak > 3 ? '15-minute full warm-up' : '10-minute dynamic warm-up';
+      title = `Perform a ${warmTime}`;
+    } else if (task.id === '13') {
+      const boxTime = streak > 3 ? '20-min shadow boxing with high-knees' : '15-min dynamic shadow boxing';
+      title = `Morning cardio: ${boxTime}`;
+    } else if (task.id === '14') {
+      const showerTime = streak > 3 ? '5-minute cold shower' : '3-minute cold shower';
+      title = `Take a ${showerTime}`;
+    } else if (task.id === '15') {
+      const planScope = streak > 3 ? 'Detail plan your day and block calendar slots' : 'Detail plan your day and set hourly reminders';
+      title = planScope;
+    } else if (task.id === '16') {
+      const pageCount = streak > 3 ? '12 pages and write a summary' : '7 pages of a book';
+      title = `Read ${pageCount}`;
+    } else if (task.id === '17') {
+      const counts = streak > 3 ? '35 pushups & 2 min plank' : '25 pushups & 1.5 min plank';
+      title = `Strength boost: ${counts}`;
+    }
+  }
+
+  return {
+    ...task,
+    title,
+    desc,
+    xp,
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000
+  };
+};
+
+export const generateDailyQuests = (userStreak: number, userLvl: number, previousQueue: Task[]): Task[] => {
+  let pool = PLAYFUL_TASKS;
+  
+  // Exclude previously assigned tasks to ensure new ones are DIFFERENT
+  const previousTitles = previousQueue.map(q => q.title);
+  let availablePool = pool.filter(t => !previousTitles.includes(t.title));
+  if (availablePool.length === 0) {
+    availablePool = pool;
+  }
+
+  // Filter pool by progressive difficulty level (using streak/level max)
+  const effectiveTier = Math.max(userLvl, userStreak);
+  let difficulty: 'EASY' | 'MEDIUM' | 'HARD' = 'EASY';
+  if (effectiveTier >= 6) {
+    difficulty = 'HARD';
+  } else if (effectiveTier >= 3) {
+    difficulty = 'MEDIUM';
+  }
+
+  let filteredPool = availablePool.filter(t => t.difficulty === difficulty);
+  if (filteredPool.length === 0) {
+    filteredPool = pool.filter(t => t.difficulty === difficulty);
+  }
+  if (filteredPool.length === 0) {
+    filteredPool = availablePool;
+  }
+
+  const randomIdx1 = Math.floor(Math.random() * filteredPool.length);
+  let randomIdx2 = Math.floor(Math.random() * filteredPool.length);
+  while (randomIdx2 === randomIdx1 && filteredPool.length > 1) {
+    randomIdx2 = Math.floor(Math.random() * filteredPool.length);
+  }
+
+  const newQuests = filteredPool.length > 1 
+    ? [filteredPool[randomIdx1], filteredPool[randomIdx2]] 
+    : [filteredPool[randomIdx1]];
+
+  return newQuests.map(q => {
+    const freshId = generateUUID();
+    const baseQuestCopy = { ...q, id: freshId };
+    return scaleTaskForDifficulty(baseQuestCopy, userStreak);
+  });
+};
+
 const INITIAL_BADGES: Badge[] = [
   { id: 'b1', icon: '🌵', title: 'Cactus Hydrator', desc: 'Drank water like a succulent', unlocked: true },
   { id: 'b2', icon: '☀️', title: 'Sun God Streak', desc: 'Achieved a 5-day morning streak', unlocked: true },
@@ -641,36 +757,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTimeElapsed(0);
       setCurrentQuestIndex(0);
       
-      let pool = PLAYFUL_TASKS;
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const savedPersona = window.localStorage.getItem('solarhero_persona_tasks');
-        if (savedPersona) {
-          try {
-            pool = JSON.parse(savedPersona);
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      }
-
-      let filteredPool = getFilteredTasksByLevel(pool, level);
-      
-      const randomIdx1 = Math.floor(Math.random() * filteredPool.length);
-      let randomIdx2 = Math.floor(Math.random() * filteredPool.length);
-      while (randomIdx2 === randomIdx1 && filteredPool.length > 1) {
-        randomIdx2 = Math.floor(Math.random() * filteredPool.length);
-      }
-      const newQueue = filteredPool.length > 1 ? [filteredPool[randomIdx1], filteredPool[randomIdx2]] : [filteredPool[randomIdx1]];
-      const mappedQueue = newQueue.map((t, idx) => ({ 
-        ...t, 
-        id: generateUUID(),
-        isCompleted: false, 
-        isLocked: false, 
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000 
-      }));
-      setDailyQuestsQueue(mappedQueue);
+      const newQueue = generateDailyQuests(streak, level, dailyQuestsQueue);
+      setDailyQuestsQueue(newQueue);
     }
-  }, [appState, level]);
+  }, [appState, level, streak]);
 
   // Real-world daily reset checker: runs on launch and resets state if the date changed
   useEffect(() => {
@@ -690,36 +780,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTimeElapsed(0);
         setCurrentQuestIndex(0);
 
-        let pool = PLAYFUL_TASKS;
-        const savedPersona = window.localStorage.getItem('solarhero_persona_tasks');
-        if (savedPersona) {
-          try {
-            pool = JSON.parse(savedPersona);
-          } catch (e) {
-            console.error(e);
-          }
-        }
-
-        let filteredPool = getFilteredTasksByLevel(pool, level);
-        
-        const randomIdx1 = Math.floor(Math.random() * filteredPool.length);
-        let randomIdx2 = Math.floor(Math.random() * filteredPool.length);
-        while (randomIdx2 === randomIdx1 && filteredPool.length > 1) {
-          randomIdx2 = Math.floor(Math.random() * filteredPool.length);
-        }
-        const newQueue = filteredPool.length > 1 ? [filteredPool[randomIdx1], filteredPool[randomIdx2]] : [filteredPool[randomIdx1]];
-        const mappedQueue = newQueue.map((t, idx) => ({ 
-          ...t, 
-          id: generateUUID(),
-          isCompleted: false, 
-          isLocked: false, 
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000 
-        }));
-        setDailyQuestsQueue(mappedQueue);
+        const newQueue = generateDailyQuests(streak, level, dailyQuestsQueue);
+        setDailyQuestsQueue(newQueue);
       }
       window.localStorage.setItem('solarhero_last_active_date', todayStr);
     }
-  }, [level]);
+  }, [level, streak]);
 
   // Ticking execution timer when task is active
   useEffect(() => {
