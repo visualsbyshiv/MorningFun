@@ -37,6 +37,7 @@ export const TodayTaskScreen: React.FC = () => {
     hasIntroduced,
     dailyQuestsQueue,
     completeActiveTask,
+    markTaskExpired,
     setCurrentQuest,
     resetQuestState,
     tasksCreatedAt,
@@ -86,25 +87,18 @@ export const TodayTaskScreen: React.FC = () => {
 
   useEffect(() => {
     const updateTimer = () => {
-      const exp = tasksCreatedAt + 12 * 60 * 60 * 1000;
+      const exp = tasksCreatedAt + 24 * 60 * 60 * 1000;
       setRemainingTime(Math.max(0, exp - Date.now()));
 
       // Check for individual task expirations in the queue
-      let queueChanged = false;
-      const updatedQueue = dailyQuestsQueue.map((task) => {
+      dailyQuestsQueue.forEach((task) => {
         const taskExpiresAt = task.expiresAt || exp;
         if (taskExpiresAt <= Date.now() && !task.isCompleted && !task.isExpired) {
-          queueChanged = true;
           // Log as incomplete/skipped in History
           addManualHistoryLog(task.title, task.icon, false);
-          return { ...task, isExpired: true };
+          markTaskExpired(task.id);
         }
-        return task;
       });
-
-      if (queueChanged) {
-        setCustomQuestsQueue(updatedQueue);
-      }
     };
     updateTimer();
     const timer = setInterval(updateTimer, 1000);
@@ -165,13 +159,13 @@ export const TodayTaskScreen: React.FC = () => {
       randomIdx2 = Math.floor(Math.random() * pool.length);
     }
     const defaultTasks = pool.length > 1 ? [
-      { ...pool[randomIdx1], isCompleted: false, isLocked: false, expiresAt: Date.now() + 12 * 60 * 60 * 1000 },
-      { ...pool[randomIdx2], isCompleted: false, isLocked: false, expiresAt: Date.now() + 12 * 60 * 60 * 1000 }
+      { ...pool[randomIdx1], isCompleted: false, isLocked: false, expiresAt: Date.now() + 24 * 60 * 60 * 1000 },
+      { ...pool[randomIdx2], isCompleted: false, isLocked: false, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }
     ] : [
-      { ...pool[0], isCompleted: false, isLocked: false, expiresAt: Date.now() + 12 * 60 * 60 * 1000 }
+      { ...pool[0], isCompleted: false, isLocked: false, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }
     ];
     setCustomQuestsQueue(defaultTasks);
-    Alert.alert("Tasks Reset", `Your 12-hour timer has been restarted with 2 basic ${currentDifficulty} tasks! ⚡`);
+    Alert.alert("Tasks Reset", `Your 24-hour timer has been restarted with 2 basic ${currentDifficulty} tasks! ⚡`);
   };
 
   // Sample proofs mapped by Quest ID
@@ -484,7 +478,7 @@ Response JSON Schema:
               ⏳ Tasks Expired!
             </Text>
             <Text style={[styles.limitDesc, { color: theme.textSecondary, marginTop: 8 }]}>
-              Your daily routine tasks have expired. You had 12 hours to complete them.
+              Your daily routine tasks have expired. You had 24 hours to complete them.
             </Text>
             <Button
               title="Reset Tasks & Restart Timer ⚡"
@@ -649,13 +643,13 @@ Response JSON Schema:
               </View>
             )}
           </View>
-          {dailyQuestsQueue.map((task) => {
+          {dailyQuestsQueue.filter(task => !task.isExpired).map((task) => {
             const isTaskLocked = false;
             const isTaskCompleted = task.isCompleted ?? false;
             const isTaskExpired = task.isExpired ?? false;
 
             // Calculate individual countdown timer
-            const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 12 * 60 * 60 * 1000);
+            const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 24 * 60 * 60 * 1000);
             const taskRemaining = Math.max(0, taskExpiresAt - Date.now());
             
             return (

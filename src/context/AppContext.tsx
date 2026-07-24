@@ -172,6 +172,7 @@ interface AppContextType {
   hasIntroduced: boolean;
   setHasIntroduced: (val: boolean) => void;
   completeActiveTask: (taskId: string) => void;
+  markTaskExpired: (taskId: string) => void;
   tasksCreatedAt: number;
   tasksExpired: boolean;
   feedbacks: Feedback[];
@@ -446,7 +447,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const checkExpiry = () => {
-      const remaining = tasksCreatedAt + 12 * 60 * 60 * 1000 - Date.now();
+      const remaining = tasksCreatedAt + 24 * 60 * 60 * 1000 - Date.now();
       setTasksExpired(remaining <= 0);
     };
     checkExpiry();
@@ -542,6 +543,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const markTaskExpired = (taskId: string) => {
+    setDailyQuestsQueue(prev => {
+      return prev.map(t => t.id === taskId ? { ...t, isExpired: true } : t);
+    });
+  };
+
   const saveApiKeys = (geminiKey: string, resendKey: string) => {
     setGeminiApiKey(geminiKey);
     setResendApiKey(resendKey);
@@ -586,7 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: generateUUID(),
       isCompleted: false,
       isLocked: false,
-      expiresAt: Date.now() + 12 * 60 * 60 * 1000,
+      expiresAt: Date.now() + 24 * 60 * 60 * 1000,
       isExpired: false
     }));
     setDailyQuestsQueue(mappedTasks);
@@ -659,7 +666,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: generateUUID(),
         isCompleted: false, 
         isLocked: false, 
-        expiresAt: Date.now() + 12 * 60 * 60 * 1000 
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000 
       }));
       setDailyQuestsQueue(mappedQueue);
     }
@@ -706,7 +713,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           id: generateUUID(),
           isCompleted: false, 
           isLocked: false, 
-          expiresAt: Date.now() + 12 * 60 * 60 * 1000 
+          expiresAt: Date.now() + 24 * 60 * 60 * 1000 
         }));
         setDailyQuestsQueue(mappedQueue);
       }
@@ -749,7 +756,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const syncTasks = async () => {
       try {
         const upsertRows = dailyQuestsQueue.map(t => {
-          const expiresTime = t.expiresAt || (Date.now() + 12 * 60 * 60 * 1000);
+          const expiresTime = t.expiresAt || (Date.now() + 24 * 60 * 60 * 1000);
           return {
             id: t.id,
             user_id: userId,
@@ -838,11 +845,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (dbTasks && dbTasks.length > 0) {
         finalQueue = dbTasks.map(mapTaskFromDb);
-        const firstUncompleted = finalQueue.findIndex(t => !t.isCompleted);
+        const firstUncompleted = finalQueue.findIndex(t => !t.isCompleted && !t.isExpired);
         activeIndex = firstUncompleted !== -1 ? firstUncompleted : finalQueue.length - 1;
       } else {
         // Create default onboarding tasks
-        const expiresTime = Date.now() + 12 * 60 * 60 * 1000;
+        const expiresTime = Date.now() + 24 * 60 * 60 * 1000;
         const defaultTasks = DEFAULT_ONBOARDING_TASKS(expiresTime);
         const insertRows = defaultTasks.map(t => {
           const taskUuid = generateUUID();
@@ -1193,6 +1200,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         hasIntroduced,
         setHasIntroduced,
         completeActiveTask,
+        markTaskExpired,
         tasksCreatedAt,
         tasksExpired,
         feedbacks,
