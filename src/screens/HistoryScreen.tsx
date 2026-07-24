@@ -32,6 +32,14 @@ export const HistoryScreen: React.FC = () => {
 
   const [dbHistoryLogs, setDbHistoryLogs] = useState<any[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [filterType, setFilterType] = useState<'ALL' | 'COMPLETED' | 'INCOMPLETE'>('ALL');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const filteredHistoryLogs = dbHistoryLogs.filter((log) => {
+    if (filterType === 'COMPLETED') return log.isCompleted === true;
+    if (filterType === 'INCOMPLETE') return log.isCompleted === false;
+    return true;
+  });
 
   useEffect(() => {
     if (!isLoggedIn || !userId) {
@@ -348,17 +356,53 @@ export const HistoryScreen: React.FC = () => {
       )}
 
       {/* Dynamic completed routine history log */}
-      <View style={{ marginTop: 24 }}>
+      <View style={{ marginTop: 24, zIndex: 10 }}>
         <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Routine History Log</Text>
-        
+
+        {/* Dropdown Filter for Completed & Incomplete Tasks */}
+        <View style={{ position: 'relative', zIndex: 99, marginBottom: 16 }}>
+          <TouchableOpacity 
+            style={[styles.dropdownButton, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]} 
+            onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+          >
+            <Text style={[styles.dropdownButtonText, { color: theme.textPrimary }]}>
+              {filterType === 'ALL' ? '📂 All Quests' : filterType === 'COMPLETED' ? '✅ Completed Quests' : '❌ Incomplete / Expired Quests'}
+            </Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: 'bold' }}>{isDropdownOpen ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+
+          {isDropdownOpen && (
+            <View style={[styles.dropdownMenu, { backgroundColor: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#FFFFFF' : '#1E293B', borderColor: theme.cardBorder }]}>
+              <TouchableOpacity 
+                style={styles.dropdownItem} 
+                onPress={() => { setFilterType('ALL'); setIsDropdownOpen(false); }}
+              >
+                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'ALL' ? 'bold' : 'normal' }]}>📂 All Quests</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.dropdownItem, { borderTopWidth: 1, borderTopColor: theme.cardBorder }]} 
+                onPress={() => { setFilterType('COMPLETED'); setIsDropdownOpen(false); }}
+              >
+                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'COMPLETED' ? 'bold' : 'normal' }]}>✅ Completed Quests</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.dropdownItem, { borderTopWidth: 1, borderTopColor: theme.cardBorder }]} 
+                onPress={() => { setFilterType('INCOMPLETE'); setIsDropdownOpen(false); }}
+              >
+                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'INCOMPLETE' ? 'bold' : 'normal' }]}>❌ Incomplete / Expired Quests</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
         {isLoadingLogs ? (
           <View style={[styles.friendsCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder, padding: 24, alignItems: 'center' }]}>
             <ActivityIndicator size="small" color={theme.primary} />
             <Text style={{ color: theme.textSecondary, marginTop: 8, fontSize: 12 }}>Syncing history...</Text>
           </View>
-        ) : dbHistoryLogs && dbHistoryLogs.length > 0 ? (
+        ) : filteredHistoryLogs && filteredHistoryLogs.length > 0 ? (
           <View style={[styles.friendsCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder }]}>
-            {dbHistoryLogs.map((log) => {
+            {filteredHistoryLogs.map((log) => {
               const isCompleted = log.isCompleted !== false; // default true if not specified
               return (
                 <View key={log.id} style={[styles.friendRow, { borderBottomColor: theme.cardBorder, alignItems: 'center', justifyContent: 'space-between' }]}>
@@ -399,10 +443,10 @@ export const HistoryScreen: React.FC = () => {
           <View style={[styles.friendsCard, { backgroundColor: theme.cardBackground, borderColor: theme.cardBorder, padding: 24, alignItems: 'center' }]}>
             <Text style={{ fontSize: 32, marginBottom: 12 }}>🏆</Text>
             <Text style={[styles.friendName, { color: theme.textPrimary, textAlign: 'center', fontWeight: 'bold' }]}>
-              No tasks completed yet!
+              No tasks found for this filter!
             </Text>
             <Text style={{ color: theme.textSecondary, textAlign: 'center', marginTop: 6, fontSize: 13 }}>
-              Complete your first morning task to join the worldwide leaderboard! 🏆
+              Try changing the filter or complete some quests first!
             </Text>
           </View>
         )}
@@ -618,5 +662,34 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 11,
     fontWeight: 'bold',
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 4,
+  },
+  dropdownButtonText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  dropdownMenu: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    marginTop: 4,
+    width: '100%',
+    zIndex: 99,
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  dropdownItemText: {
+    fontSize: 12,
   },
 });

@@ -910,9 +910,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let activeIndex = 0;
 
       if (dbTasks && dbTasks.length > 0) {
-        finalQueue = dbTasks.map(mapTaskFromDb);
-        const firstUncompleted = finalQueue.findIndex(t => !t.isCompleted && !t.isExpired);
-        activeIndex = firstUncompleted !== -1 ? firstUncompleted : finalQueue.length - 1;
+        const startOfToday = new Date();
+        startOfToday.setHours(0,0,0,0);
+        // Filter to only include tasks created today, or that are not expired yet (active tasks carried over)
+        const todayTasks = dbTasks.filter(t => {
+          const createdTime = new Date(t.created_at).getTime();
+          const expiresTime = new Date(t.expires_at).getTime();
+          return createdTime >= startOfToday.getTime() || expiresTime > Date.now();
+        });
+
+        if (todayTasks.length > 0) {
+          finalQueue = todayTasks.map(mapTaskFromDb);
+          const firstUncompleted = finalQueue.findIndex(t => !t.isCompleted && !t.isExpired);
+          activeIndex = firstUncompleted !== -1 ? firstUncompleted : finalQueue.length - 1;
+        } else {
+          // No tasks for today, generate new progressive tasks!
+          const newQuests = generateDailyQuests(streak, level, []);
+          finalQueue = newQuests;
+          activeIndex = 0;
+        }
       } else {
         // Create default onboarding tasks
         const expiresTime = Date.now() + 24 * 60 * 60 * 1000;
