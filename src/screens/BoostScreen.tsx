@@ -15,7 +15,7 @@ import {
 
 export const BoostScreen: React.FC = () => {
   const { theme, mode } = useTheme();
-  const { questsCompletedTodayCount, maxQuestsAllowedToday, unlockExtraQuestViaAd } = useApp();
+  const { questsCompletedTodayCount, maxQuestsAllowedToday, unlockExtraQuestViaAd, isBoostUnlocked } = useApp();
 
   const [adModalVisible, setAdModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -104,6 +104,11 @@ export const BoostScreen: React.FC = () => {
   }, []);
 
   const handleWatchAd = () => {
+    if (!isBoostUnlocked) {
+      Alert.alert("Locked 🔒", "Please complete today's tasks first!");
+      return;
+    }
+
     if (isWeb) {
       // Fallback simulation mode
       setCountdown(5);
@@ -154,34 +159,42 @@ export const BoostScreen: React.FC = () => {
       </View>
 
       {/* Watch Ad Booster Card */}
-      <View style={[styles.boostCard, { backgroundColor: theme.cardBackground, borderColor: '#FF7E5F' }]}>
+      <View style={[styles.boostCard, { backgroundColor: theme.cardBackground, borderColor: isBoostUnlocked ? '#FF7E5F' : theme.cardBorder }]}>
         <View style={styles.boostInfo}>
-          <Text style={[styles.boostTitle, { color: theme.textPrimary }]}>📺 Watch Sponsor Ad</Text>
+          <Text style={[styles.boostTitle, { color: theme.textPrimary }]}>
+            📺 Watch Sponsor Ad {!isBoostUnlocked && '🔒 (Locked)'}
+          </Text>
           <Text style={[styles.boostDesc, { color: theme.textSecondary }]}>
             Watch a quick sponsor video to unlock +1 additional quest slot for today.
           </Text>
+          {!isBoostUnlocked && (
+            <Text style={{ color: '#FF7E5F', fontSize: 10, fontWeight: 'bold', marginTop: 6 }}>
+              ⚠️ Complete today's tasks first to unlock booster slot!
+            </Text>
+          )}
         </View>
 
         <TouchableOpacity 
           style={[
             styles.boostBtn, 
-            { backgroundColor: theme.primary },
-            (isAdBuffering && !isWeb) && { opacity: 0.6 }
+            { backgroundColor: isBoostUnlocked ? theme.primary : 'rgba(128, 128, 128, 0.15)' },
+            ((isAdBuffering && !isWeb) || !isBoostUnlocked) && { opacity: 0.8 }
           ]} 
           onPress={handleWatchAd}
-          disabled={isAdBuffering && !isWeb}
         >
-          {isAdBuffering && !isWeb ? (
+          {isAdBuffering && !isWeb && isBoostUnlocked ? (
             <ActivityIndicator size="small" color="#FFF" />
           ) : (
-            <Play size={16} color="#FFF" fill="#FFF" />
+            <Play size={16} color={isBoostUnlocked ? '#FFF' : theme.textSecondary} fill={isBoostUnlocked ? '#FFF' : 'transparent'} />
           )}
-          <Text style={styles.boostBtnText}>
-            {isAdBuffering && !isWeb 
-              ? 'Loading Sponsor Ad...' 
-              : adLoaded 
-                ? 'Watch Ad & Boost' 
-                : 'Watch Sponsor Ad (Web/Sim)'}
+          <Text style={[styles.boostBtnText, { color: isBoostUnlocked ? '#FFF' : theme.textSecondary }]}>
+            {!isBoostUnlocked
+              ? 'Locked 🔒'
+              : isAdBuffering && !isWeb 
+                ? 'Loading Sponsor Ad...' 
+                : adLoaded 
+                  ? 'Watch Ad & Boost' 
+                  : 'Watch Sponsor Ad (Web/Sim)'}
           </Text>
         </TouchableOpacity>
       </View>

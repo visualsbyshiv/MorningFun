@@ -178,6 +178,7 @@ interface AppContextType {
   feedbacks: Feedback[];
   addFeedback: (rating: number, message: string) => void;
   clearFeedbacks: () => void;
+  isBoostUnlocked: boolean;
   addManualHistoryLog: (taskTitle: string, taskIcon: string, isCompleted: boolean) => void;
   selectActiveTaskIndex: (index: number) => void;
 }
@@ -672,6 +673,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const questsCompletedTodayCount = dailyQuestsQueue.filter(t => t.isCompleted).length;
   const maxQuestsAllowedToday = dailyQuestsQueue.length;
+  const isBoostUnlocked = dailyQuestsQueue.length > 0 && dailyQuestsQueue.filter(t => !t.isExpired).every(t => t.isCompleted);
 
   const boostExtraQuest = () => {
     let pool = PLAYFUL_TASKS;
@@ -1288,6 +1290,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         feedbacks,
         addFeedback,
         clearFeedbacks,
+        isBoostUnlocked,
         addManualHistoryLog,
         selectActiveTaskIndex,
       }}
