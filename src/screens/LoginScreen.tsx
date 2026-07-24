@@ -188,7 +188,7 @@ export const LoginScreen: React.FC = () => {
       try {
         const { data: user, error: errorCheck } = await supabase
           .from('users')
-          .select('id')
+          .select('*')
           .eq('username', usernameLower)
           .maybeSingle();
 
@@ -196,9 +196,52 @@ export const LoginScreen: React.FC = () => {
           setErrorMessage('No account associated with this username.');
           return;
         }
-        setAuthMode('verify_forgot_otp');
+
+        // Generate 6-digit OTP
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        setGeneratedOtp(otpCode);
+        console.log(`[DEV ONLY] OTP Code generated for ${usernameLower}: ${otpCode}`);
+
+        // Send OTP using Resend API
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'MorningTask <onboarding@resend.dev>',
+            to: user.email,
+            subject: 'MorningTask Password Reset Verification Code',
+            html: `<p>Hello <strong>${user.username}</strong>,</p>
+                   <p>Your password reset OTP code is: <strong style="font-size: 22px; color: #FF6D00; letter-spacing: 2px;">${otpCode}</strong></p>
+                   <p>Please enter this code in the app to verify your identity and reset your password.</p>`
+          })
+        });
+
+        const resData = await res.json();
+        console.log('Resend OTP response:', resData);
+
+        if (!res.ok) {
+          setErrorMessage('Failed to send OTP email. Please try again or check Resend API setup.');
+          return;
+        }
+
+        const namePart = user.email.split('@')[0];
+        const domainPart = user.email.split('@')[1];
+        const masked = namePart.length > 2 
+          ? `${namePart[0]}${'*'.repeat(namePart.length - 2)}${namePart[namePart.length - 1]}@${domainPart}`
+          : `**@${domainPart}`;
+
+        setSuccessMessage(`OTP code successfully sent to ${masked}`);
+        setOtpInput('');
+        setTimeout(() => {
+          setAuthMode('verify_forgot_otp');
+          setSuccessMessage('');
+        }, 1800);
       } catch (e) {
-        setErrorMessage('An unexpected error occurred.');
+        setErrorMessage('An unexpected error occurred sending verification OTP.');
+        console.error(e);
       }
     }
   };
@@ -219,8 +262,8 @@ export const LoginScreen: React.FC = () => {
         return;
       }
 
-      if (otpInput.trim().toLowerCase() !== user.email.toLowerCase()) {
-        setErrorMessage('Incorrect Email Address. Security verification failed.');
+      if (otpInput.trim() !== generatedOtp) {
+        setErrorMessage('Incorrect 6-Digit OTP code. Verification failed.');
         return;
       }
 
@@ -248,7 +291,8 @@ export const LoginScreen: React.FC = () => {
         setSuccessMessage('');
       }, 2000);
     } catch (e) {
-      setErrorMessage('An unexpected error occurred.');
+      setErrorMessage('An unexpected error occurred during password update.');
+      console.error(e);
     }
   };
 
@@ -340,9 +384,9 @@ export const LoginScreen: React.FC = () => {
               <View style={styles.inputRow}>
                 <Mail size={18} color="#8A8F9E" />
                 <TextInput
-                  placeholder="Confirm Registered Email"
+                  placeholder="Enter 6-Digit OTP Code"
                   placeholderTextColor="#8A8F9E"
-                  keyboardType="email-address"
+                  keyboardType="numeric"
                   autoCapitalize="none"
                   style={styles.input}
                   value={otpInput}
