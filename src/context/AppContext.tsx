@@ -922,7 +922,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
 
         if (todayTasks.length > 0) {
-          finalQueue = todayTasks.map(mapTaskFromDb);
+          finalQueue = todayTasks.map(t => {
+            const mapped = mapTaskFromDb(t);
+            const taskExpiresAt = mapped.expiresAt || (Date.now() + 24 * 60 * 60 * 1000);
+            if (taskExpiresAt <= Date.now() && !mapped.isCompleted && !mapped.isExpired) {
+              mapped.isExpired = true;
+              addManualHistoryLog(mapped.title, mapped.icon, false);
+            }
+            return mapped;
+          });
           const firstUncompleted = finalQueue.findIndex(t => !t.isCompleted && !t.isExpired);
           activeIndex = firstUncompleted !== -1 ? firstUncompleted : finalQueue.length - 1;
         } else {

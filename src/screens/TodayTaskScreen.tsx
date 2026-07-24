@@ -633,10 +633,14 @@ Response JSON Schema:
               </View>
             )}
           </View>
-          {dailyQuestsQueue.filter(task => !task.isExpired).map((task) => {
+          {dailyQuestsQueue.filter(task => {
+            const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 24 * 60 * 60 * 1000);
+            const isExpired = task.isExpired || taskExpiresAt <= Date.now();
+            return !isExpired;
+          }).map((task) => {
             const isTaskLocked = false;
             const isTaskCompleted = task.isCompleted ?? false;
-            const isTaskExpired = task.isExpired ?? false;
+            const isTaskExpired = task.isExpired || (task.expiresAt || 0) <= Date.now();
             const isTaskActive = task.id === currentQuest?.id;
 
             // Calculate individual countdown timer
