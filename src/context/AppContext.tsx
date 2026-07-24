@@ -22,6 +22,7 @@ export const mapTaskFromDb = (dbTask: any): Task => {
   let difficulty: 'EASY' | 'MEDIUM' | 'HARD' = 'EASY';
   let xp = 100;
   let title = dbTask.title;
+  let isBoosted = false;
 
   if (dbTask.title && dbTask.title.startsWith('{')) {
     try {
@@ -31,6 +32,7 @@ export const mapTaskFromDb = (dbTask: any): Task => {
       desc = parsed.desc || desc;
       difficulty = parsed.difficulty || difficulty;
       xp = parsed.xp || xp;
+      isBoosted = !!parsed.isBoosted;
     } catch (e) {}
   } else {
     icon = dbTask.icon || icon;
@@ -48,7 +50,8 @@ export const mapTaskFromDb = (dbTask: any): Task => {
     xp,
     isCompleted: dbTask.is_completed,
     isExpired: dbTask.is_expired,
-    expiresAt: dbTask.expires_at ? new Date(dbTask.expires_at).getTime() : undefined
+    expiresAt: dbTask.expires_at ? new Date(dbTask.expires_at).getTime() : undefined,
+    isBoosted
   };
 };
 
@@ -58,7 +61,8 @@ export const mapTaskToDb = (task: Task, userId: string) => {
     icon: task.icon,
     desc: task.desc,
     difficulty: task.difficulty,
-    xp: task.xp
+    xp: task.xp,
+    isBoosted: !!task.isBoosted
   });
 
   return {
@@ -86,6 +90,7 @@ export interface Task {
   isLocked?: boolean;
   expiresAt?: number;
   isExpired?: boolean;
+  isBoosted?: boolean;
 }
 
 export interface Badge {
@@ -425,7 +430,7 @@ export const scaleTaskForDifficulty = (task: Task, streak: number): Task => {
     title,
     desc,
     xp,
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000
+    expiresAt: Date.now() + 12 * 60 * 60 * 1000
   };
 };
 
@@ -564,7 +569,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     const checkExpiry = () => {
-      const remaining = tasksCreatedAt + 24 * 60 * 60 * 1000 - Date.now();
+      const remaining = tasksCreatedAt + 12 * 60 * 60 * 1000 - Date.now();
       setTasksExpired(remaining <= 0);
     };
     checkExpiry();
@@ -673,7 +678,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const questsCompletedTodayCount = dailyQuestsQueue.filter(t => t.isCompleted).length;
   const maxQuestsAllowedToday = dailyQuestsQueue.length;
-  const isBoostUnlocked = dailyQuestsQueue.length > 0 && dailyQuestsQueue.filter(t => !t.isExpired).every(t => t.isCompleted);
+  const isBoostUnlocked = dailyQuestsQueue.length > 0 && dailyQuestsQueue.filter(t => !t.isExpired && !t.isBoosted).every(t => t.isCompleted);
 
   const boostExtraQuest = () => {
     let pool = PLAYFUL_TASKS;
@@ -695,7 +700,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...baseTask, 
       id: generateUUID(),
       isCompleted: false,
-      isLocked: false 
+      isLocked: false,
+      isBoosted: true
     };
 
     setDailyQuestsQueue(prev => [...prev, boostedTask]);
@@ -711,7 +717,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: generateUUID(),
       isCompleted: false,
       isLocked: false,
-      expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+      expiresAt: Date.now() + 12 * 60 * 60 * 1000,
       isExpired: false
     }));
     setDailyQuestsQueue(mappedTasks);
@@ -824,7 +830,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const syncTasks = async () => {
       try {
         const upsertRows = dailyQuestsQueue.map(t => {
-          const expiresTime = t.expiresAt || (Date.now() + 24 * 60 * 60 * 1000);
+          const expiresTime = t.expiresAt || (Date.now() + 12 * 60 * 60 * 1000);
           return {
             id: t.id,
             user_id: userId,
@@ -924,7 +930,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (todayTasks.length > 0) {
           finalQueue = todayTasks.map(t => {
             const mapped = mapTaskFromDb(t);
-            const taskExpiresAt = mapped.expiresAt || (Date.now() + 24 * 60 * 60 * 1000);
+            const taskExpiresAt = mapped.expiresAt || (Date.now() + 12 * 60 * 60 * 1000);
             if (taskExpiresAt <= Date.now() && !mapped.isCompleted && !mapped.isExpired) {
               mapped.isExpired = true;
               addManualHistoryLog(mapped.title, mapped.icon, false);
@@ -941,7 +947,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       } else {
         // Create default onboarding tasks
-        const expiresTime = Date.now() + 24 * 60 * 60 * 1000;
+        const expiresTime = Date.now() + 12 * 60 * 60 * 1000;
         const defaultTasks = DEFAULT_ONBOARDING_TASKS(expiresTime);
         const insertRows = defaultTasks.map(t => {
           const taskUuid = generateUUID();

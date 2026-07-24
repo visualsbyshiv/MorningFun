@@ -88,7 +88,7 @@ export const TodayTaskScreen: React.FC = () => {
 
   useEffect(() => {
     const updateTimer = () => {
-      const exp = tasksCreatedAt + 24 * 60 * 60 * 1000;
+      const exp = tasksCreatedAt + 12 * 60 * 60 * 1000;
       setRemainingTime(Math.max(0, exp - Date.now()));
 
       // Check for individual task expirations in the queue
@@ -634,7 +634,7 @@ Response JSON Schema:
             )}
           </View>
           {dailyQuestsQueue.filter(task => {
-            const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 24 * 60 * 60 * 1000);
+            const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 12 * 60 * 60 * 1000);
             const isExpired = task.isExpired || taskExpiresAt <= Date.now();
             return !isExpired;
           }).map((task) => {
@@ -644,7 +644,7 @@ Response JSON Schema:
             const isTaskActive = task.id === currentQuest?.id;
 
             // Calculate individual countdown timer
-            const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 24 * 60 * 60 * 1000);
+            const taskExpiresAt = task.expiresAt || (tasksCreatedAt + 12 * 60 * 60 * 1000);
             const taskRemaining = Math.max(0, taskExpiresAt - Date.now());
             
             return (

@@ -205,7 +205,7 @@ You MUST respond in JSON format matching this array structure:
         ...task,
         isCompleted: false,
         isLocked: false,
-        expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+        expiresAt: Date.now() + 12 * 60 * 60 * 1000,
         isExpired: false
       }));
       
@@ -229,7 +229,7 @@ You MUST respond in JSON format matching this array structure:
           xp: 120,
           isCompleted: false,
           isLocked: false,
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+          expiresAt: Date.now() + 12 * 60 * 60 * 1000,
           isExpired: false
         },
         {
@@ -241,7 +241,7 @@ You MUST respond in JSON format matching this array structure:
           xp: 140,
           isCompleted: false,
           isLocked: false,
-          expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+          expiresAt: Date.now() + 12 * 60 * 60 * 1000,
           isExpired: false
         }
       ];
