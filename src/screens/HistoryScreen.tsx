@@ -32,7 +32,7 @@ export const HistoryScreen: React.FC = () => {
 
   const [dbHistoryLogs, setDbHistoryLogs] = useState<any[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
-  const [filterType, setFilterType] = useState<'ALL' | 'COMPLETED' | 'INCOMPLETE'>('ALL');
+  const [filterType, setFilterType] = useState<'COMPLETED' | 'INCOMPLETE'>('COMPLETED');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const filteredHistoryLogs = dbHistoryLogs.filter((log) => {
@@ -366,7 +366,7 @@ export const HistoryScreen: React.FC = () => {
             onPress={() => setIsDropdownOpen(!isDropdownOpen)}
           >
             <Text style={[styles.dropdownButtonText, { color: theme.textPrimary }]}>
-              {filterType === 'ALL' ? '📂 All Quests' : filterType === 'COMPLETED' ? '✅ Completed Quests' : '❌ Incomplete / Expired Quests'}
+              {filterType === 'COMPLETED' ? '✅ Completed Tasks' : '❌ Incompleted Tasks'}
             </Text>
             <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: 'bold' }}>{isDropdownOpen ? '▲' : '▼'}</Text>
           </TouchableOpacity>
@@ -375,21 +375,15 @@ export const HistoryScreen: React.FC = () => {
             <View style={[styles.dropdownMenu, { backgroundColor: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#FFFFFF' : '#1E293B', borderColor: theme.cardBorder }]}>
               <TouchableOpacity 
                 style={styles.dropdownItem} 
-                onPress={() => { setFilterType('ALL'); setIsDropdownOpen(false); }}
-              >
-                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'ALL' ? 'bold' : 'normal' }]}>📂 All Quests</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.dropdownItem, { borderTopWidth: 1, borderTopColor: theme.cardBorder }]} 
                 onPress={() => { setFilterType('COMPLETED'); setIsDropdownOpen(false); }}
               >
-                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'COMPLETED' ? 'bold' : 'normal' }]}>✅ Completed Quests</Text>
+                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'COMPLETED' ? 'bold' : 'normal' }]}>✅ Completed Tasks</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.dropdownItem, { borderTopWidth: 1, borderTopColor: theme.cardBorder }]} 
                 onPress={() => { setFilterType('INCOMPLETE'); setIsDropdownOpen(false); }}
               >
-                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'INCOMPLETE' ? 'bold' : 'normal' }]}>❌ Incomplete / Expired Quests</Text>
+                <Text style={[styles.dropdownItemText, { color: theme.cardBackground === 'rgba(255, 255, 255, 0.12)' ? '#1E293B' : '#F8F9FA', fontWeight: filterType === 'INCOMPLETE' ? 'bold' : 'normal' }]}>❌ Incompleted Tasks</Text>
               </TouchableOpacity>
             </View>
           )}
